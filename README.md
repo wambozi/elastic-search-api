@@ -1,13 +1,9 @@
-# Elasticsearch Search API
-
+![Elasticsearch Search API](docs/img/elastic-search-api.png)
 ## Description
 
-This API accepts requests on `/search` and returns search results from an Elasticsearch cluster in the response body.
+Golang API that returns search results from Elasticsearch.
 
 ## Dependencies
 
 - `go 1.13.5^`
 
-## Local Dev
-
-To run locally: `go run main.go`
