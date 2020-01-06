@@ -50,6 +50,7 @@ jobs:
         with:
           name: coverage
 
+      - uses: actions/checkout@master
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@master
         env:
