@@ -27,6 +27,7 @@ jobs:
     - name: Build
       run: |
         export GO_FILES=$(find . -name '*.go'  | grep -v /vendor/)
+        go get -u golang.org/x/lint/golint
         go vet .
         for file in $GO_FILES; do \
           golint $file; \
