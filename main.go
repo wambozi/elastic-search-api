@@ -11,6 +11,7 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-chi/chi"
+	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
@@ -20,12 +21,31 @@ type server struct {
 	elasticClient *elasticsearch.Client
 }
 
+type config struct {
+	Region          string
+	ElasticEndpoint string
+}
+
+func main() {
+	handler()
+}
+
 func handler() {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
 
+	// Load .env if its present (used for local dev)
+	if err := godotenv.Load(); err != nil {
+		logger.Info("No .env file found.")
+	}
+
+	config := config{
+		Region:          os.Getenv("REGION"),
+		ElasticEndpoint: os.Getenv("ELASTICSEARCH_ENDPOINT"),
+	}
+
 	cfg := elasticsearch.Config{
-		Addresses: []string{"http://localhost:9200"},
+		Addresses: []string{config.ElasticEndpoint},
 		Transport: &http.Transport{
 			Dial: (&net.Dialer{
 				Timeout:   30 * time.Second,
@@ -76,8 +96,4 @@ func handler() {
 		s.logger.Fatal(err.Error())
 	}
 
-}
-
-func main() {
-	handler()
 }
