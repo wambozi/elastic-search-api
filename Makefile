@@ -35,18 +35,8 @@ publish:
 format:
 	@gofmt -w *.go $$(ls -d */ | grep -v /vendor/)
 
-.PHONY: test-ci
-test-ci: clean
-	[ -d reports ] || mkdir reports
-	env
-	docker network create testing --subnet=172.18.0.0/16 --gateway=172.18.0.1
-	docker run -it --network testing --ip 172.18.0.2 -d --name elastic-test -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
-	sleep 30
-	go test --coverprofile=reports/cov.out $$(go list ./... | grep -v /vendor/)
-	go tool cover -func=reports/cov.out
-
-.PHONY: test-local
-test-local: clean
+.PHONY: test
+test: clean
 	[ -d reports ] || mkdir reports
 	docker network create testing --subnet=172.18.0.0/16 --gateway=172.18.0.1
 	docker run -it --network testing --ip 172.18.0.2 -d --name elastic-test -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}

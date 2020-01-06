@@ -14,4 +14,12 @@ jobs:
       id: go
 
     - name: Build
-      run: make build
+      run: |
+        go vet .
+        for file in $(find . --name '*.go'  | grep -v /vendor/); do \
+          golint $$file; \
+        done
+        gofmt -w *.go $$(ls -d */ | grep -v /vendor/)
+        go env -w GOPRIVATE=github.com/wambozi/*
+        export GOFLAGS="-mod=vendor"
+        CGO_ENABLED=0 GOOS=linux go build -mod vendor -o ${OUT}-${VERSION} -ldflags="-extldflags \"-static\" -w -s -X main.version=${VERSION}"
