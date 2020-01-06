@@ -26,9 +26,10 @@ jobs:
 
     - name: Build
       run: |
+        export GO_FILES=$(find . -name '*.go'  | grep -v /vendor/)
         go vet .
-        for file in $(find . --name '*.go'  | grep -v /vendor/); do \
-          golint $$file; \
+        for file in $GO_FILES; do \
+          golint $file; \
         done
         gofmt -w *.go $$(ls -d */ | grep -v /vendor/)
         go env -w GOPRIVATE=github.com/wambozi/*
