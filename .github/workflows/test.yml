@@ -2,7 +2,7 @@ name: Test
 on: [push]
 jobs:
 
-  build:
+  test:
     name: Test
     runs-on: ubuntu-latest
     steps:
@@ -42,7 +42,7 @@ jobs:
     
   sonarCloudTrigger:
     name: SonarCloud Trigger
-    needs: Test
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Download coverage
