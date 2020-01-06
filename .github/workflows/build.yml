@@ -26,9 +26,10 @@ jobs:
 
     - name: Build
       run: |
+        export VERSION=$(git describe --always --long)
         export GO_FILES=$(find . -name '*.go'  | grep -v /vendor/)
         go vet .
         gofmt -w *.go $(ls -d */ | grep -v /vendor/)
         go env -w GOPRIVATE=github.com/wambozi/*
         export GOFLAGS="-mod=vendor"
-        CGO_ENABLED=0 GOOS=linux go build -mod vendor -o ${OUT}-${VERSION} -ldflags="-extldflags \"-static\" -w -s -X main.version=${VERSION}"
+        CGO_ENABLED=0 GOOS=linux go build -mod vendor -o ./bin/elastic-search-api-$VERSION -ldflags="-extldflags \"-static\" -w -s -X main.version=$VERSION"
