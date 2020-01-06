@@ -14,4 +14,6 @@ jobs:
       id: go
 
     - name: Build
-      run: make build
+      run: |
+        export ELASTICSEARCH_IP="172.10.0.2"
+        make test-ci

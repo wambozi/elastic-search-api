@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (s *server) search(w http.ResponseWriter, r *http.Request) {
+func (s *Server) search(w http.ResponseWriter, r *http.Request) {
 	index := "demo"
 	keys, ok := r.URL.Query()["q"]
 	if !ok || len(keys[0]) < 1 {
@@ -17,7 +17,8 @@ func (s *server) search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func(es *elasticsearch.Client, logger *logrus.Logger, i string, q string) {
-		err := indexQuery(es, i, q)
+		// we don't care about a successful index response, so ignore it
+		_, err := indexQuery(es, i, q)
 		if err != nil {
 			logger.Error(err)
 		}
@@ -28,5 +29,6 @@ func (s *server) search(w http.ResponseWriter, r *http.Request) {
 		s.logger.Error(err)
 	}
 
-	json.NewEncoder(w).Encode(res)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res.Hits)
 }

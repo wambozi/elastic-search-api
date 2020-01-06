@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,7 +14,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type server struct {
+// Server represents this APIs HTTP server and corresponding methods
+type Server struct {
 	logger        *logrus.Logger
 	router        *chi.Mux
 	elasticClient *elasticsearch.Client
@@ -44,20 +44,9 @@ func handler() {
 		ElasticEndpoint: os.Getenv("ELASTICSEARCH_ENDPOINT"),
 	}
 
-	cfg := elasticsearch.Config{
-		Addresses: []string{config.ElasticEndpoint},
-		Transport: &http.Transport{
-			Dial: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).Dial,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ResponseHeaderTimeout: 10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-		},
-	}
+	cfg := generateElasticConfig(config.ElasticEndpoint)
 
-	s := server{
+	s := Server{
 		logger: logger,
 	}
 	s.router = chi.NewRouter()
@@ -84,11 +73,11 @@ func handler() {
 	}(&server)
 
 	// capture interrupt (ctrl-c)
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	ctrlC := make(chan os.Signal, 1)
+	signal.Notify(ctrlC, os.Interrupt, syscall.SIGTERM)
 
 	// wait indefinitely until interrupt signal
-	<-stop
+	<-ctrlC
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

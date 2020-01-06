@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -16,9 +17,10 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 )
 
-func indexQuery(es *elasticsearch.Client, i string, q string) error {
+func indexQuery(es *elasticsearch.Client, i string, q string) (response string, err error) {
 	var (
 		b strings.Builder
+		r map[string]interface{}
 	)
 
 	b.WriteString(`{"query" : "`)
@@ -39,27 +41,26 @@ func indexQuery(es *elasticsearch.Client, i string, q string) error {
 	// Perform the request with the client.
 	res, err := indexReq.Do(context.Background(), es)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer res.Body.Close()
 
 	if res.IsError() {
 		err := fmt.Errorf("[%s] Error indexing document ID=%s", res.Status(), idHash)
-		return err
+		return "", err
 	}
 	// Deserialize the response into a map.
-	var r map[string]interface{}
 	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 		e := fmt.Errorf("Error parsing the index response body: %s", err)
-		return e
+		return "", e
 	}
 
 	// Print the response status and indexed document version.
-	err = fmt.Errorf("[%s] %s; version=%d", res.Status(), r["result"], int(r["_version"].(float64)))
-	return err
+	responseString := fmt.Sprintf("[%s] %s; version=%d", res.Status(), r["result"], int(r["_version"].(float64)))
+	return responseString, err
 }
 
-func searchQuery(es *elasticsearch.Client, i string, q string) (w http.ResponseWriter, err error) {
+func searchQuery(es *elasticsearch.Client, i string, q string) (r *Results, err error) {
 	var (
 		buf bytes.Buffer
 	)
@@ -103,5 +104,26 @@ func searchQuery(es *elasticsearch.Client, i string, q string) (w http.ResponseW
 		return nil, err
 	}
 
-	return w, nil
+	if err := json.NewDecoder(searchRes.Body).Decode(&r); err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}
+
+func generateElasticConfig(endpoint string) elasticsearch.Config {
+	cfg := elasticsearch.Config{
+		Addresses: []string{endpoint},
+		Transport: &http.Transport{
+			Dial: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ResponseHeaderTimeout: 10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+	}
+
+	return cfg
 }

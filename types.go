@@ -14,26 +14,24 @@ type ResultObj struct {
 	Source DocumentObj
 }
 
-type shards struct {
-	Total      int `json:"total"`
-	Successful int `json:"successful"`
-	Skipped    int `json:"skipped"`
-	Failed     int `json:"failed"`
-}
-
 type hits struct {
 	Total struct {
 		Value    int    `json:"value"`
 		Relation string `json:"relation"`
 	}
-	MaxScore int `json:"max_score,omitempty"`
-	Hits     []ResultObj
+	MaxScore int         `json:"max_score,omitempty"`
+	Results  []ResultObj `json:"hits"`
 }
 
 // Results represents the Results response coming from Elasticsearch when performing a query
 type Results struct {
 	Took     int  `json:"took,omitempty"`
 	TimedOut bool `json:"timed_out,omitempty"`
-	Shards   shards
-	Hits     hits
+	Shards   struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Skipped    int `json:"skipped"`
+		Failed     int `json:"failed"`
+	}
+	Hits hits
 }
