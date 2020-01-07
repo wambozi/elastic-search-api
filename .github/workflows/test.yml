@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@master
 
       - name: Test
-        run: make test
+        run: make test-runner
       
       - name: Upload Test Coverage
         uses: actions/upload-artifact@v1
