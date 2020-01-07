@@ -2,7 +2,6 @@ OUT := ./bin/elastic-search-api
 PKG := github.com/wambozi/elastic-search-api
 ELASTIC_VERSION := 7.5.1
 
-VERSION := $(shell git describe --always --long)
 PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/)
 GO_FILES := $(shell find . --name '*.go'  | grep -v /vendor/)
 
@@ -21,16 +20,18 @@ clean:
 compile:
 	go env -w GOPRIVATE=github.com/wambozi/*
 	export GOFLAGS="-mod=vendor"
-	CGO_ENABLED=0 GOOS=linux go build -mod vendor -o ${OUT}-${VERSION} -ldflags="-extldflags \"-static\" -w -s -X main.version=${VERSION}"
+	CGO_ENABLED=0 GOOS=linux go build -mod vendor -o ${OUT} -ldflags="-extldflags \"-static\""
 
 .PHONY: build
-build: compile
-	docker build --build-arg VERSION="${VERSION}" -t wambozi/elastic-search-api:${VERSION} .
+build:
+	docker build -t wambozi/elastic-search-api:${VERSION} .
 
 .PHONY: publish
 publish:
 	docker login --username wambozi --password ${DOCKER_TOKEN}
+	docker tag wambozi/elastic-search-api:${VERSION} wambozi/elastic-search-api:latest
 	docker push wambozi/elastic-search-api:${VERSION}
+	docker push wambozi/elastic-search-api:latest
 
 .PHONY: format
 format:
