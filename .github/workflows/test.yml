@@ -23,16 +23,11 @@ jobs:
               dep ensure
           fi
 
-      - uses: actions/checkout@v2
-      - name: Test
-        run: |
-          export ELASTICSEARCH_IP="172.18.0.2"
-          [ -d reports ] || mkdir reports
-          docker network create testing --subnet=172.18.0.0/16 --gateway=172.18.0.1
-          docker run -it --network testing --ip 172.18.0.2 -d --name elastic-test -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.5.1
-          sleep 30
-          go test --coverprofile=reports/cov.out $(go list ./... | grep -v /vendor/)
-          go tool cover -func=reports/cov.out
+      - name: Clone Repository
+        uses: actions/checkout@master
+
+      - name: Build and Test
+        run: make test
       
       - name: upload test coverage
         uses: actions/upload-artifact@v1
@@ -54,5 +49,5 @@ jobs:
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
