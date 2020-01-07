@@ -37,12 +37,31 @@ publish:
 format:
 	@gofmt -w *.go $$(ls -d */ | grep -v /vendor/)
 
-.PHONY: test
-test: clean
+.PHONY: test-runner
+test-runner: export ELASTICSEARCH_ENDPOINT=http://172.18.0.2:9200
+test-runner: clean
 	[ -d reports ] || mkdir reports
 	docker network create testing --subnet=172.18.0.0/16 --gateway=172.18.0.1
 	docker run -it --network testing --ip 172.18.0.2 -d --name elastic-test -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
-	sleep 30
+	until $$(curl --output /dev/null --silent --head --fail $$ELASTICSEARCH_ENDPOINT); do \
+		printf '.' ; \
+		sleep 5 ; \
+	done
+	curl  -H "Content-Type:application/json" -XPUT $$ELASTICSEARCH_ENDPOINT/test/_doc/1234 -d '{ "title" : "test", "post_date" : "2009-11-15T14:12:12", "message" : "testing out Elasticsearch" }'
+	go test --coverprofile=reports/cov.out $$(go list ./... | grep -v /vendor/)
+	go tool cover -func=reports/cov.out
+
+.PHONY: test-local
+test-local: export ELASTICSEARCH_ENDPOINT=http://localhost:9200
+test-local: clean
+	[ -d reports ] || mkdir reports
+	docker run -it -d --name elastic-test -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
+	echo $$ELASTICSEARCH_ENDPOINT
+	until $$(curl --output /dev/null --silent --head --fail $$ELASTICSEARCH_ENDPOINT); do \
+		printf '.' ; \
+		sleep 5 ; \
+	done 
+	curl  -H "Content-Type:application/json" -XPUT $$ELASTICSEARCH_ENDPOINT/test/_doc/1234 -d '{ "title" : "test", "post_date" : "2009-11-15T14:12:12", "message" : "testing out Elasticsearch" }'
 	go test --coverprofile=reports/cov.out $$(go list ./... | grep -v /vendor/)
 	go tool cover -func=reports/cov.out
 

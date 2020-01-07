@@ -6,7 +6,7 @@ import (
 )
 
 func TestIndexQuery(t *testing.T) {
-	endpoint := "http://" + os.Getenv("ELASTICSEARCH_IP") + ":9200"
+	endpoint := os.Getenv("ELASTICSEARCH_ENDPOINT")
 	mockCfg := generateElasticConfig(endpoint)
 	mockClient, err := CreateElasticClient(mockCfg)
 	if err != nil {
@@ -21,10 +21,11 @@ func TestIndexQuery(t *testing.T) {
 }
 
 func TestSearchQuery(t *testing.T) {
-	endpoint := "http://" + os.Getenv("ELASTICSEARCH_IP") + ":9200"
+	endpoint := os.Getenv("ELASTICSEARCH_ENDPOINT")
 	mockCfg := generateElasticConfig(endpoint)
 	mockClient, err := CreateElasticClient(mockCfg)
 	if err != nil {
+		print(err)
 		t.Fatal("Can't connect to elasticsearch endpoint.")
 	}
 
