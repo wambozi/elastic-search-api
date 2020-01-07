@@ -26,28 +26,41 @@ jobs:
       - name: Clone Repository
         uses: actions/checkout@master
 
-      - name: Build and Test
+      - name: Test
         run: make test
       
-      - name: upload test coverage
+      - name: Upload Test Coverage
         uses: actions/upload-artifact@v1
         with:
           name: coverage
           path: ./reports/cov.out
-    
-  sonarCloudTrigger:
-    name: SonarCloud Trigger
-    needs: test
+  
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Download coverage
-        uses: actions/download-artifact@v1
-        with:
-          name: coverage
 
-      - uses: actions/checkout@v2
-      - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+      id: go
+    
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Get dependencies
+      run: |
+        go get -v -t -d ./...
+        if [ -f Gopkg.toml ]; then
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+            dep ensure
+        fi
+
+    - name: Build
+      run: make build
+
+    - name: Publish
+      env:
+        DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      run: make publish
