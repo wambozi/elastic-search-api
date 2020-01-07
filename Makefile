@@ -23,7 +23,7 @@ compile:
 	CGO_ENABLED=0 GOOS=linux go build -mod vendor -o ${OUT} -ldflags="-extldflags \"-static\""
 
 .PHONY: build
-build:
+build: compile
 	docker build -t wambozi/elastic-search-api:${VERSION} .
 
 .PHONY: publish

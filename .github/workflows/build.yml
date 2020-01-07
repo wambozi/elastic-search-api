@@ -25,6 +25,9 @@ jobs:
               dep ensure
           fi
 
+      - name: Test
+        run: make test
+
       - name: Build
         run: |
           export VERSION=$(git describe --always --long --dirty)
