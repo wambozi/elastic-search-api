@@ -29,7 +29,7 @@ build: compile
 
 .PHONY: publish
 publish:
-	docker login --user wambozi --password ${DOCKER_TOKEN}
+	docker login --username wambozi --password ${DOCKER_TOKEN}
 	docker push wambozi/elastic-search-api:${VERSION}
 
 .PHONY: format
