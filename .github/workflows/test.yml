@@ -1,6 +1,7 @@
 name: Test
 on: [push]
 jobs:
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -10,7 +11,7 @@ jobs:
         with:
           go-version: 1.13
         id: go
-
+      
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
@@ -22,36 +23,15 @@ jobs:
               dep ensure
           fi
 
-      - uses: actions/checkout@v2
-      - name: Test
-        run: |
-          export ELASTICSEARCH_IP="172.18.0.2"
-          [ -d reports ] || mkdir reports
-          docker network create testing --subnet=172.18.0.0/16 --gateway=172.18.0.1
-          docker run -it --network testing --ip 172.18.0.2 -d --name elastic-test -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.5.1
-          sleep 30
-          go test --coverprofile=reports/cov.out $(go list ./... | grep -v /vendor/)
-          go tool cover -func=reports/cov.out
+      - name: Clone Repository
+        uses: actions/checkout@master
 
-      - name: upload test coverage
+      - name: Test
+        run: make test
+      
+      - name: Upload Test Coverage
         uses: actions/upload-artifact@v1
         with:
           name: coverage
           path: ./reports/cov.out
 
-  sonarCloudTrigger:
-    name: SonarCloud Trigger
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download coverage
-        uses: actions/download-artifact@v1
-        with:
-          name: coverage
-
-      - uses: actions/checkout@master
-      - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
