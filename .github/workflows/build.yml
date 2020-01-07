@@ -55,12 +55,11 @@ jobs:
           prerelease: false
       
       - name: Build
-        env:
-          VERSION: ${{ steps.create_release.id }}
-        run: make build
+        run: |
+          export VERSION=$(git describe --always --long --dirty)
+          make build
 
       - name: Publish
-        env:
-          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-          VERSION: ${{ steps.create_release.id }}
-        run: make publish
+        run: |
+          export VERSION=$(git describe --always --long --dirty)
+          make publish
