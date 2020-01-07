@@ -19,7 +19,7 @@ type hits struct {
 		Value    int    `json:"value"`
 		Relation string `json:"relation"`
 	}
-	MaxScore int         `json:"max_score,omitempty"`
+	MaxScore float64     `json:"max_score,omitempty"`
 	Results  []ResultObj `json:"hits"`
 }
 
