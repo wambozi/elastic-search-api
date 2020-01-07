@@ -3,7 +3,9 @@ name: Test
 on:
   push:
     branches:
-      - '!master'
+      - 'feature/**'
+      - 'hotfix/**'
+      - 'chore/**'
 
 jobs:
 
