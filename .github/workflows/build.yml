@@ -3,10 +3,9 @@ on:
   push:
     branches:
       - master
-    tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go 1.13
@@ -27,17 +26,15 @@ jobs:
           fi
 
       - name: Build
-        run: make compile
-      
-      - name: Upload Binary
-        uses: actions/upload-artifact@v1
-        with:
-          name: coverage
-          path: ./bin/elastic-search-api
+        run: |
+          export VERSION=$(git describe --always --long --dirty)
+          make build
 
-  publish:
-    runs-on: ubuntu-latest
-    steps:
+      - name: Publish
+        run: |
+          export VERSION=$(git describe --always --long --dirty)
+          make publish
+
       - uses: actions/checkout@master
       - name: Create Release
         id: create_release
@@ -53,13 +50,3 @@ jobs:
             - Second Change
           draft: false
           prerelease: false
-      
-      - name: Build
-        run: |
-          export VERSION=$(git describe --always --long --dirty)
-          make build
-
-      - name: Publish
-        run: |
-          export VERSION=$(git describe --always --long --dirty)
-          make publish
