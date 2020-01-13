@@ -9,10 +9,11 @@ import (
 )
 
 func (s *Server) search(w http.ResponseWriter, r *http.Request) {
-	query, ok := r.URL.Query()["q"]
+	// Get the query string parameter values
+	query, ok := r.URL.Query()["qt"]
 	index, ok := r.URL.Query()["i"]
 	if !ok {
-		s.logger.Error("Url Params missing. Required: 'q' = 'query string', 'i' = 'index'")
+		s.logger.Error("Url Params missing. Required: 'qt' = 'query term', 'i' = 'index'")
 		return
 	}
 
