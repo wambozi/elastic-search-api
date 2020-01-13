@@ -143,8 +143,6 @@ func searchQuery(es *elasticsearch.Client, i string, q string) (r *Results, err 
 		},
 	}
 
-	print(query)
-
 	if err := json.NewEncoder(&buf).Encode(query); err != nil {
 		return nil, err
 	}
