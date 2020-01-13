@@ -22,37 +22,27 @@ type SearchRequest struct {
 	Index      string `json:"index"`
 }
 
-// DocumentObj represents the document source in the results coming from Elasticsearch
-type DocumentObj struct {
-	H1 []string `json:"h1,omitempty"`
-	H2 []string `json:"h2,omitempty"`
-	H3 []string `json:"h3,omitempty"`
-	H4 []string `json:"h4,omitempty"`
-	P  []string `json:"p,omitempty"`
-}
-
-// MetaObj represets the document metadata in the results coming from Elasticsearch
-type MetaObj struct {
-	Title string `json:"title"`
-}
-
 // ResultObj represents the results returned in "hits" from Elasticsearch
 type ResultObj struct {
-	Index  string      `json:"_index"`
-	Type   string      `json:"_type"`
-	ID     string      `json:"_id"`
-	Score  float64     `json:"_score"`
-	Source DocumentObj `json:"source"`
-	Meta   MetaObj     `json:"meta"`
-}
-
-type hits struct {
-	Total struct {
-		Value    int    `json:"value"`
-		Relation string `json:"relation"`
-	}
-	MaxScore float64     `json:"max_score,omitempty"`
-	Results  []ResultObj `json:"hits"`
+	Index  string  `json:"_index"`
+	Type   string  `json:"_type"`
+	ID     string  `json:"_id"`
+	Score  float64 `json:"_score"`
+	Source struct {
+		Source struct {
+			H1 []string `json:"h1,omitempty"`
+			H2 []string `json:"h2,omitempty"`
+			H3 []string `json:"h3,omitempty"`
+			H4 []string `json:"h4,omitempty"`
+			P  []string `json:"p,omitempty"`
+		} `json:"Source"`
+		Meta struct {
+			Title       string `json:"title"`
+			Description string `json:"Description"`
+			Keywords    string `json:"Keywords"`
+		} `json:"Meta"`
+		URI string `json:"URI"`
+	} `json:"_source"`
 }
 
 // Results represents the Results response coming from Elasticsearch when performing a query
@@ -65,7 +55,14 @@ type Results struct {
 		Skipped    int `json:"skipped"`
 		Failed     int `json:"failed"`
 	}
-	Hits hits
+	Hits struct {
+		Total struct {
+			Value    int    `json:"value"`
+			Relation string `json:"relation"`
+		}
+		MaxScore float64     `json:"max_score,omitempty"`
+		Results  []ResultObj `json:"hits"`
+	} `json:"hits"`
 }
 
 // Search takes an elasticsearch Client and SearchRequest and returns results for that request
@@ -128,20 +125,24 @@ func indexQuery(es *elasticsearch.Client, i string, q string) (response string, 
 	return responseString, err
 }
 
+// Query represents the query to Elasticsearch
+type Query struct {
+	Query struct {
+		MultiMatch struct {
+			Query  string   `json:"query"`
+			Fields []string `json:"fields"`
+		} `json:"multi_match"`
+	} `json:"query"`
+}
+
 func searchQuery(es *elasticsearch.Client, i string, q string) (r *Results, err error) {
 	var (
 		buf bytes.Buffer
 	)
 
-	query := map[string]interface{}{
-		"query": map[string]interface{}{
-			"multi_match": map[string]interface{}{
-				"query":  q,
-				"type":   "best_fields",
-				"fields": []string{"Links", "Meta", "Source", "URI"},
-			},
-		},
-	}
+	query := Query{}
+	query.Query.MultiMatch.Query = q
+	query.Query.MultiMatch.Fields = []string{"Meta.Desc", "Meta.Keywords", "Source.h2", "Source.h3", "Source.h4", "Source.p"}
 
 	if err := json.NewEncoder(&buf).Encode(query); err != nil {
 		return nil, err
@@ -151,7 +152,6 @@ func searchQuery(es *elasticsearch.Client, i string, q string) (r *Results, err 
 		es.Search.WithContext(context.Background()),
 		es.Search.WithIndex(i),
 		es.Search.WithBody(&buf),
-		es.Search.WithTrackTotalHits(true),
 		es.Search.WithPretty(),
 	)
 	if err != nil {
