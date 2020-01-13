@@ -1,5 +1,5 @@
-OUT := ./bin/elastic-webcrawler
-PKG := github.com/wambozi/elastic-webcrawler
+OUT := ./bin/elastic-search-api
+PKG := github.com/wambozi/elastic-search-api
 VERSION := $(shell git describe --always --long --dirty)
 ELASTIC_VERSION := 7.5.1
 
@@ -26,7 +26,7 @@ clean:
 compile:
 	go env -w GOPRIVATE=github.com/wambozi/*
 	export GOFLAGS="-mod=vendor"
-	CGO_ENABLED=0 GOOS=linux go build -mod vendor -o ${OUT} -ldflags="-extldflags \"-static\"" ./cmd/elastic-webcrawler/main.go
+	CGO_ENABLED=0 GOOS=linux go build -mod vendor -o ${OUT} -ldflags="-extldflags \"-static\"" ./cmd/elastic-search-api/main.go
 
 .PHONY: format
 format:
@@ -36,7 +36,6 @@ format:
 test-runner: export ELASTICSEARCH_ENDPOINT=http://172.18.0.2:9200
 test-runner: clean
 	[ -d reports ] || mkdir reports
-	docker run -it -d --name redis -p 6200:6200 redis
 	docker network create testing --subnet=172.18.0.0/16 --gateway=172.18.0.1
 	docker run -it --network testing --ip 172.18.0.2 -d --name elastic -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
 	until $$(curl --output /dev/null --silent --head --fail $$ELASTICSEARCH_ENDPOINT); do \
@@ -51,7 +50,6 @@ test-runner: clean
 test-local: export ELASTICSEARCH_ENDPOINT=http://localhost:9200
 test-local: clean
 	[ -d reports ] || mkdir reports
-	docker run -it -d --name redis -p 6379:6379 redis
 	docker run -it -d --name elastic -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
 	until $$(curl --output /dev/null --silent --head --fail $$ELASTICSEARCH_ENDPOINT); do \
 		printf '.' ; \
@@ -77,5 +75,5 @@ sonar:
 
 .PHONY: docker-build
 docker-build: compile
-	docker build --build-arg "ENV_ID=local" -t wambozi/elastic-webcrawler:${VERSION} .
-	docker tag wambozi/elastic-webcrawler:${VERSION} wambozi/elastic-webcrawler:latest
+	docker build --build-arg "ENV_ID=local" -t wambozi/elastic-search-api:${VERSION} .
+	docker tag wambozi/elastic-search-api:${VERSION} wambozi/elastic-search-api:latest
