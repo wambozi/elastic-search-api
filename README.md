@@ -11,6 +11,31 @@ Golang API that returns search results from Elasticsearch.
 ## Dependencies
 
 - `go 1.13.5^`
+- `Elasticsearch v7.5.1^`
+
+## Configuration
+
+Requires an config yaml in `conf`.
+
+For instance:
+
+Path: `/conf/local.yml`
+
+```YAML
+elasticsearch:
+  endpoint: http://localhost:9200
+  password: changeme
+  username: elastic
+
+appsearch:
+  endpoint: http://localhost:3002
+  api: /api/as/v1/
+  token: private-pq7aaoSDFapSADosdnfns
+
+server:
+  port: 8080
+  readHeaderTimeoutMillis: 3000
+```
 
 ## Usage
 
@@ -62,3 +87,12 @@ To run:
 ```shell
 docker run --rm -it -p 8080:8080 wambozi/elastic-search-api:latest
 ```
+
+## Contributors
+
+- Adam Bemiller
+  - Adam provided most of the high level project and server/routes framework for this project. Huge thanks to him!
+
+## License
+
+MIT License

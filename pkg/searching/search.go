@@ -18,31 +18,9 @@ import (
 
 // SearchRequest represents a search request on the POST /search route
 type SearchRequest struct {
-	SearchTerm string `json:"searchTerm"`
-	Index      string `json:"index"`
-}
-
-// ResultObj represents the results returned in "hits" from Elasticsearch
-type ResultObj struct {
-	Index  string  `json:"_index"`
-	Type   string  `json:"_type"`
-	ID     string  `json:"_id"`
-	Score  float64 `json:"_score"`
-	Source struct {
-		Source struct {
-			H1 []string `json:"h1,omitempty"`
-			H2 []string `json:"h2,omitempty"`
-			H3 []string `json:"h3,omitempty"`
-			H4 []string `json:"h4,omitempty"`
-			P  []string `json:"p,omitempty"`
-		} `json:"Source"`
-		Meta struct {
-			Title       string `json:"title"`
-			Description string `json:"Description"`
-			Keywords    string `json:"Keywords"`
-		} `json:"Meta"`
-		URI string `json:"URI"`
-	} `json:"_source"`
+	SearchTerm string   `json:"searchTerm"`
+	Index      string   `json:"index"`
+	Fields     []string `json:"fields"`
 }
 
 // Results represents the Results response coming from Elasticsearch when performing a query
@@ -60,8 +38,28 @@ type Results struct {
 			Value    int    `json:"value"`
 			Relation string `json:"relation"`
 		}
-		MaxScore float64     `json:"max_score,omitempty"`
-		Results  []ResultObj `json:"hits"`
+		MaxScore float64 `json:"max_score,omitempty"`
+		Results  []struct {
+			Index  string  `json:"_index"`
+			Type   string  `json:"_type"`
+			ID     string  `json:"_id"`
+			Score  float64 `json:"_score"`
+			Source struct {
+				Source struct {
+					H1 []string `json:"h1,omitempty"`
+					H2 []string `json:"h2,omitempty"`
+					H3 []string `json:"h3,omitempty"`
+					H4 []string `json:"h4,omitempty"`
+					P  []string `json:"p,omitempty"`
+				} `json:"Source"`
+				Meta struct {
+					Title       string `json:"title"`
+					Description string `json:"Description"`
+					Keywords    string `json:"Keywords"`
+				} `json:"Meta"`
+				URI string `json:"URI"`
+			} `json:"_source"`
+		} `json:"hits"`
 	} `json:"hits"`
 }
 
@@ -75,7 +73,7 @@ func Search(elasticClient *elasticsearch.Client, s SearchRequest, logger *logrus
 		}
 	}(elasticClient, logger, s.Index, s.SearchTerm)
 
-	res, err := searchQuery(elasticClient, s.Index, s.SearchTerm)
+	res, err := searchQuery(elasticClient, s.Index, s.SearchTerm, s.Fields)
 	if err != nil {
 		logger.Error(err)
 	}
@@ -135,14 +133,14 @@ type Query struct {
 	} `json:"query"`
 }
 
-func searchQuery(es *elasticsearch.Client, i string, q string) (r *Results, err error) {
+func searchQuery(es *elasticsearch.Client, i string, q string, f []string) (r *Results, err error) {
 	var (
 		buf bytes.Buffer
 	)
 
 	query := Query{}
 	query.Query.MultiMatch.Query = q
-	query.Query.MultiMatch.Fields = []string{"Meta.Desc", "Meta.Keywords", "Source.h2", "Source.h3", "Source.h4", "Source.p"}
+	query.Query.MultiMatch.Fields = f
 
 	if err := json.NewEncoder(&buf).Encode(query); err != nil {
 		return nil, err
