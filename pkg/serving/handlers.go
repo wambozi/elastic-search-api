@@ -33,7 +33,8 @@ func (s *Server) handleCrawl() http.HandlerFunc {
 			w.Write(ers)
 			return
 		}
-		results := searching.Search(s.ElasticClient, b, s.Log)
+
+		results := searching.Search(s.ElasticClient, r, b, s.Log)
 		response, err := json.Marshal(results)
 		if err != nil {
 			es := fmt.Sprintf("Failed to marshal %+v", results)

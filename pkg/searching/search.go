@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -21,6 +22,13 @@ type SearchRequest struct {
 	SearchTerm string   `json:"searchTerm"`
 	Index      string   `json:"index"`
 	Fields     []string `json:"fields"`
+}
+
+// IndexQuery represents the document indexed in Elastic that contains the search term and relevant info
+type IndexQuery struct {
+	Query     string `json:"searchTerm"`
+	UserAgent string `json:"user-agent"`
+	Date      string `json:"date"`
 }
 
 // Results represents the Results response coming from Elasticsearch when performing a query
@@ -45,14 +53,8 @@ type Results struct {
 			ID     string  `json:"_id"`
 			Score  float64 `json:"_score"`
 			Source struct {
-				Source struct {
-					H1 []string `json:"h1,omitempty"`
-					H2 []string `json:"h2,omitempty"`
-					H3 []string `json:"h3,omitempty"`
-					H4 []string `json:"h4,omitempty"`
-					P  []string `json:"p,omitempty"`
-				} `json:"Source"`
 				Meta struct {
+					OgImage     string `json:"ogimage,omitempty"`
 					Title       string `json:"title"`
 					Description string `json:"Description"`
 					Keywords    string `json:"Keywords"`
@@ -64,14 +66,14 @@ type Results struct {
 }
 
 // Search takes an elasticsearch Client and SearchRequest and returns results for that request
-func Search(elasticClient *elasticsearch.Client, s SearchRequest, logger *logrus.Logger) *Results {
-	go func(es *elasticsearch.Client, logger *logrus.Logger, i string, q string) {
+func Search(elasticClient *elasticsearch.Client, r *http.Request, s SearchRequest, logger *logrus.Logger) *Results {
+	go func(es *elasticsearch.Client, logger *logrus.Logger, i string, req *http.Request, q string) {
 		// we don't care about a successful index response, so ignore it
-		_, err := indexQuery(es, i, q)
+		_, err := indexQuery(es, i, req, q)
 		if err != nil {
 			logger.Error(err)
 		}
-	}(elasticClient, logger, s.Index, s.SearchTerm)
+	}(elasticClient, logger, s.Index, r, s.SearchTerm)
 
 	res, err := searchQuery(elasticClient, s.Index, s.SearchTerm, s.Fields)
 	if err != nil {
@@ -80,24 +82,29 @@ func Search(elasticClient *elasticsearch.Client, s SearchRequest, logger *logrus
 	return res
 }
 
-func indexQuery(es *elasticsearch.Client, i string, q string) (response string, err error) {
+func indexQuery(es *elasticsearch.Client, i string, req *http.Request, q string) (response string, err error) {
 	var (
-		b strings.Builder
-		r map[string]interface{}
+		buf bytes.Buffer
+		r   map[string]interface{}
 	)
 
-	b.WriteString(`{"query" : "`)
-	b.WriteString(q)
-	b.WriteString(`"}`)
+	iq := IndexQuery{}
+	iq.Query = q
+	iq.UserAgent = req.Header.Get("user-agent")
+	iq.Date = time.Now().Format("2006-01-02 15:04:05")
+
+	if err := json.NewEncoder(&buf).Encode(iq); err != nil {
+		return "", err
+	}
 
 	qb := []byte(q)
-	tb := []byte(time.Now().Format("2006-01-02 15:04:05"))
+	tb := []byte(iq.Date)
 	idBytes := md5.Sum(append(qb, tb...))
 	idHash := hex.EncodeToString(idBytes[:])
 	indexReq := esapi.IndexRequest{
 		Index:      i + "-queries",
 		DocumentID: idHash,
-		Body:       strings.NewReader(b.String()),
+		Body:       strings.NewReader(buf.String()),
 		Refresh:    "true",
 	}
 
@@ -112,6 +119,7 @@ func indexQuery(es *elasticsearch.Client, i string, q string) (response string, 
 		err := fmt.Errorf("[%s] Error indexing document ID=%s", res.Status(), idHash)
 		return "", err
 	}
+
 	// Deserialize the response into a map.
 	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 		e := fmt.Errorf("Error parsing the index response body: %s", err)
