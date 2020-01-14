@@ -90,7 +90,7 @@ docker run --rm -it -p 8080:8080 wambozi/elastic-search-api:latest
 
 ## Contributors
 
-- Adam Bemiller
+- [Adam Bemiller](https://github.com/adambemiller)
   - Adam provided most of the high level project and server/routes framework for this project. Huge thanks to him!
 
 ## License
