@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/aws/aws-sdk-go v1.28.0 // indirect
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20191218082911-5398a82b748f
-	github.com/fatih/color v1.9.0
+	github.com/fatih/color v1.9.0 // indirect
 	github.com/go-redis/redis v6.15.6+incompatible
 	github.com/google/go-cmp v0.3.0
 	github.com/gookit/color v1.2.1
