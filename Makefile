@@ -68,8 +68,8 @@ lint:
 sonar:
 	gitlab-sonar-scanner -Dsonar.login=${SONAR_USER_TOKEN}
 
-.PHONY: build
-build: compile
+.PHONY: publish
+publish: publish
 	docker login --username wambozi --password ${DOCKER_TOKEN}
 	docker build -t wambozi/elastic-search-api:${VERSION} .
 	docker tag wambozi/elastic-search-api:${VERSION} wambozi/elastic-search-api:latest
