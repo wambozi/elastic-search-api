@@ -49,7 +49,6 @@ func run(logger *logrus.Logger) error {
 		return err
 	}
 
-	// Create async elasticsearch hook for logrus
 	hook, err := logging.NewAsyncElasticHook(elasticClient, ipAddr.String(), logrus.DebugLevel, "elastic-search-api")
 	if err != nil {
 		return err

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
-	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/sirupsen/logrus"
 )
 
@@ -44,6 +44,7 @@ var (
 	ErrCannotCreateIndex = fmt.Errorf("cannot create index")
 )
 
+
 // NewAsyncElasticHook creates new hook with asynchronous log.
 // client - ElasticSearch client with specific es version (v5/v6/v7/...)
 // host - host of system
@@ -62,6 +63,7 @@ func NewAsyncElasticHook(client *elasticsearch.Client, host string, level logrus
 func NewAsyncElasticHookWithFunc(client *elasticsearch.Client, host string, level logrus.Level, indexFunc IndexNameFunc) (*ElasticHook, error) {
 	return newHookFuncAndFireFunc(client, host, level, indexFunc, asyncFireFunc)
 }
+
 
 func newHookFuncAndFireFunc(client *elasticsearch.Client, host string, level logrus.Level, indexFunc IndexNameFunc, fireFunc fireFunc) (*ElasticHook, error) {
 	var levels []logrus.Level

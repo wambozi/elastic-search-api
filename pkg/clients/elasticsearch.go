@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
-	"github.com/sirupsen/logrus"
 )
 
 // Document represents the doc that gets indexed in Elasticsearch
@@ -50,12 +50,16 @@ func CreateElasticClient(cfg elasticsearch.Config) (client *elasticsearch.Client
 }
 
 // IndexDocument takes a document and indexes it in Elasticsearch
-func IndexDocument(elasticClient *elasticsearch.Client, d Document, logger *logrus.Logger) {
+func IndexDocument(elasticClient *elasticsearch.Client, d Document) (resSlice []string, errSlice []error) {
 	var (
 		r  map[string]interface{}
 		wg sync.WaitGroup
 	)
+
 	wg.Add(1)
+
+	errSlice = []error{}
+	resSlice = []string{}
 
 	go func(d Document) {
 		defer wg.Done()
@@ -72,20 +76,23 @@ func IndexDocument(elasticClient *elasticsearch.Client, d Document, logger *logr
 		res, err := req.Do(context.Background(), elasticClient)
 		if err != nil {
 			// Fatal error if the indexing request throws
-			logger.Errorf("Error getting index response: %s", err)
+			errSlice = append(errSlice, fmt.Errorf("Error getting index response: %s", err))
 		}
 		defer res.Body.Close()
 
 		// If the response is an error, print but proceed
 		if res.IsError() {
-			logger.Errorf("[%s] Error indexing document ID=%s", res.Status(), d.DocumentID)
+			errSlice = append(errSlice, fmt.Errorf("[%s] Error indexing document ID=%s, err=%s", res.Status(), d.DocumentID, res.String()))
 		} else {
 			// Deserialize the response into a map
 			if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
-				logger.Errorf("Error deserializing the response object: %s", err)
+				errSlice = append(errSlice, fmt.Errorf("Error deserializing the response object: %s", err))
 			} else {
-				logger.Infof("[%s] %s; version=%d; id=%s", res.Status(), r["result"], int(r["_version"].(float64)), d.DocumentID)
+				resSlice = append(resSlice, fmt.Sprintf("[%s] %s; version=%d; id=%s", res.Status(), r["result"], int(r["_version"].(float64)), d.DocumentID))
 			}
 		}
 	}(d)
+	wg.Wait()
+
+	return resSlice, errSlice
 }

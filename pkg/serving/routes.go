@@ -16,22 +16,6 @@ import (
 	"github.com/wambozi/elastic-search-api/m/conf"
 )
 
-//Persister persists data
-type Persister interface {
-	Persist(someData string) (string, error)
-}
-
-//DatastoreNamer provides the name of the datastore
-type DatastoreNamer interface {
-	fmt.Stringer
-}
-
-//Storer persists data and provides information about the underlying datastore
-type Storer interface {
-	Persister
-	DatastoreNamer
-}
-
 //Persist saves data in a datastore
 func (st *Elasticsearch) Persist(someData string) (string, error) {
 	return fmt.Sprintf("I persisted - %s in - %s", someData, st.Cluster), nil

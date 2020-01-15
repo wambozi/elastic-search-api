@@ -58,8 +58,8 @@ type Results struct {
 					Title       string `json:"title"`
 					Description string `json:"Description"`
 					Keywords    string `json:"Keywords"`
-				} `json:"Meta"`
-				URI string `json:"URI"`
+				} `json:"meta"`
+				URI string `json:"uri"`
 			} `json:"_source"`
 		} `json:"hits"`
 	} `json:"hits"`
