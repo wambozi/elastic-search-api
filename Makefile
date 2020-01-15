@@ -70,11 +70,8 @@ sonar:
 
 .PHONY: build
 build: compile
+	docker login --username wambozi --password ${DOCKER_TOKEN}
 	docker build -t wambozi/elastic-search-api:${VERSION} .
 	docker tag wambozi/elastic-search-api:${VERSION} wambozi/elastic-search-api:latest
-
-.PHONY: publish
-publish:
-	docker login --username wambozi --password ${DOCKER_TOKEN}
 	docker push wambozi/elastic-search-api:${VERSION}
 	docker push wambozi/elastic-search-api:latest

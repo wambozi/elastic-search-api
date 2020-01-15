@@ -32,7 +32,6 @@ jobs:
         env:
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
         run: |
-          export VERSION=$(git describe --always --long --dirty)
           make publish
 
       - name: Release
