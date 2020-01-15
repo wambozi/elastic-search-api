@@ -13,19 +13,14 @@ clean:
 		docker stop $$elasticRunner; \
 		docker rm -f $$elasticRunner; \
 	done
-	for elasticRunner in $$(docker ps -a --filter=name=redis -q); do \
-		docker stop $$elasticRunner; \
-		docker rm -f $$elasticRunner; \
-	done
 	for network in $$(docker network ls | grep testing | awk '{print $$1}'); do \
 		docker network rm $$network; \
 	done
-	
 
 .PHONY: compile
 compile:
 	go env -w GOPRIVATE=github.com/wambozi/*
-	export GOFLAGS="-mod=vendor"
+	go mod vendor
 	CGO_ENABLED=0 GOOS=linux go build -mod vendor -o ${OUT} -ldflags="-extldflags \"-static\"" ./cmd/elastic-search-api/main.go
 
 .PHONY: format
@@ -36,7 +31,6 @@ format:
 test-runner: export ELASTICSEARCH_ENDPOINT=http://172.18.0.2:9200
 test-runner: clean
 	[ -d reports ] || mkdir reports
-	docker run -it -d --name redis -p 6200:6200 redis
 	docker network create testing --subnet=172.18.0.0/16 --gateway=172.18.0.1
 	docker run -it --network testing --ip 172.18.0.2 -d --name elastic -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
 	until $$(curl --output /dev/null --silent --head --fail $$ELASTICSEARCH_ENDPOINT); do \
@@ -76,5 +70,5 @@ sonar:
 
 .PHONY: docker-build
 docker-build: compile
-	docker build --build-arg "ENV_ID=local" -t wambozi/elastic-search-api:${VERSION} .
+	docker build -t wambozi/elastic-search-api:${VERSION} .
 	docker tag wambozi/elastic-search-api:${VERSION} wambozi/elastic-search-api:latest
