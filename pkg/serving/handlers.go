@@ -55,6 +55,7 @@ func (s *Server) handleCrawl() http.HandlerFunc {
 			req := searching.SearchRequest{
 				SearchTerm: q[0],
 				Index:      i[0],
+				Fields:     []string{"meta.description^2", "meta.title", "source.h1", "source.h2", "source.p"},
 			}
 			results = searching.Search(s.ElasticClient, r, req, s.Log)
 		}
