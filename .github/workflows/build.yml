@@ -26,7 +26,8 @@ jobs:
           fi
 
       - name: Test
-        run: make test-runner
+        run: |
+          make test-runner
 
       - name: Publish
         env:
